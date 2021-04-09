@@ -317,7 +317,7 @@ LogicalCalculator.prototype.ToStringRPN = function(rpn) {
             stack.push(`${lexeme}(${arg1}, ${arg2})`)
         }
         else if (lexeme == NOT) {
-            stack.push(`¬(${stack.pop()})`)
+            stack.push(`¬${stack.pop()}`)
         }
         else if (this.IsConstant(lexeme)) {
             stack.push(`${this.constants[lexeme]}`)
