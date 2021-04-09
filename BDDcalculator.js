@@ -3,38 +3,6 @@ function BDDCalculator(inputBox, resultBox) {
     this.resultBox = resultBox
 }
 
-// добавление в строку tr ячейки с текстом text
-BDDCalculator.prototype.AddCell = function(tr, text, name="td") {
-    let cell = document.createElement(name)
-    cell.innerText = text
-    tr.appendChild(cell)
-}
-
-// получение таблицы истинности
-BDDCalculator.prototype.MakeFunctionTable = function(func) {
-    let table = document.createElement("table")
-    let tr = document.createElement("tr")
-    let variables = Object.keys(func.variables)
-
-    for (let i = 0; i < variables.length; i++)
-        this.AddCell(tr, variables[i], "th")
-    this.AddCell(tr, "f", "th")
-
-    table.appendChild(tr)
-
-    for (let i = 0; i < func.values.length; i++) {
-        let tr = document.createElement("tr")
-
-        for (let j = 0; j < func.values[i].length; j++)
-            this.AddCell(tr, func.values[i][j])
-
-        this.AddCell(tr, func.vector[i])
-        table.appendChild(tr)
-    }
-
-    return table
-}
-
 // вычисление значений функции на наборе переменных
 BDDCalculator.prototype.CalculateFunction = function(calculator) {
     let variables = Object.keys(calculator.variables)
@@ -55,24 +23,35 @@ BDDCalculator.prototype.CalculateFunction = function(calculator) {
         vector.push(calculator.Evaluate())
     }
 
-    return { values: values, vector: vector, variables: calculator.variables }
+    return new FunctionTable(calculator, values, vector)
 }
 
 // построение BDD по выражению
 BDDCalculator.prototype.Solve = function() {
+    console.clear()
     try {
         let calculator = new LogicalCalculator(this.inputBox.value)
         this.resultBox.innerHTML = "<p><b>Введённое выражение:</b> " + calculator.expression + "</p>"
 
-        let result = this.CalculateFunction(calculator)
-        let table = this.MakeFunctionTable(result)
+        let funcTable = this.CalculateFunction(calculator)
 
-        this.resultBox.innerHTML += "<p><b>Вектор функции:</b> " + result.vector.join("") + "</p>"
+        this.resultBox.innerHTML += "<p><b>Распаршенное выражение:</b> " + calculator.ToString() + "</p>"
+        this.resultBox.innerHTML += "<p><b>Вектор функции:</b> " + funcTable.vector.join("") + "</p>"
         this.resultBox.innerHTML += "<p><b>Таблица истинности:</b></p>"
-        this.resultBox.appendChild(table)
+        this.resultBox.appendChild(funcTable.ToHTML())
+
+        let variables = Object.keys(calculator.variables)
+
+        for (let i = 0; i < variables.length; i++) {
+            this.resultBox.innerHTML += "<p><b>Разбиение по переменной " + variables[i] + ":</b><br>"
+            let splited = funcTable.SplitByVariable(variables[i])
+            this.resultBox.innerHTML += "TRUE: " + splited.true_expression + "<br>"
+            this.resultBox.innerHTML += "FALSE: " + splited.false_expression
+            this.resultBox.innerHTML += "</p>"
+        }
     }
     catch (error) {
         this.resultBox.innerHTML += "<p><b>Ошибка:</b> " + error + "</p>"
-
+        throw error
     }
 }
