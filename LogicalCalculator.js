@@ -1,5 +1,17 @@
+const NOT = "¬"
+const AND = "∧"
+const OR = "∨"
+const XOR = "⊕"
+const SHEFFER = "|"
+const PIRS = "↓"
+const IMPL = "→"
+const EQUAL = "≡"
+
+const ONE = "1"
+const ZERO = "0"
+
 function LogicalCalculator(expression) {
-    this.expression = expression.toLowerCase() // удаляем из выражения пробельные символы
+    this.expression = expression // удаляем из выражения пробельные символы
 
     this.InitFunctions() // инциализируем функции
     this.InitBinaryFunctions() // инициализируем бинарные функции
@@ -33,13 +45,13 @@ LogicalCalculator.prototype.InitBinaryFunctions = function() {
 LogicalCalculator.prototype.InitOperators = function() {
     this.operators = {}
 
-    this.operators["∧"] = function(x, y) { return x && y }
-    this.operators["∨"] = function(x, y) { return x || y }
-    this.operators["⊕"] = function(x, y) { return x == y ? 0 : 1 }
-    this.operators["≡"] = function(x, y) { return x == y ? 1 : 0 }
-    this.operators["→"] = function(x, y) { return (1 - x) || y }
-    this.operators["↓"] = function(x, y) { return (1 - x) && (1 - y) }
-    this.operators["|"] = function(x, y) { return (1 - x) || (1 - y) }
+    this.operators[AND] = function(x, y) { return x && y }
+    this.operators[OR] = function(x, y) { return x || y }
+    this.operators[XOR] = function(x, y) { return x == y ? 0 : 1 }
+    this.operators[EQUAL] = function(x, y) { return x == y ? 1 : 0 }
+    this.operators[IMPL] = function(x, y) { return (1 - x) || y }
+    this.operators[PIRS] = function(x, y) { return (1 - x) && (1 - y) }
+    this.operators[SHEFFER] = function(x, y) { return (1 - x) || (1 - y) }
 }
 
 // инициализация констант
@@ -53,19 +65,19 @@ LogicalCalculator.prototype.InitConstants = function() {
 // инициализация правил замены
 LogicalCalculator.prototype.InitReplacements = function() {
     this.replacementRules = [
-        ["<->", "≡"],
-        ["==", "≡"],
-        ["=", "≡"],
-        ["->", "→"],
-        ["+", "∨"],
-        ["||", "∨"],
-        ["↑", "|"],
-        ["*", "∧"],
-        ["&", "∧"],
-        ["^", "⊕"],
-        ["!", "¬"],
-        ["-", "¬"],
-        ["~", "¬"],
+        ["<->", EQUAL],
+        ["==", EQUAL],
+        ["=", EQUAL],
+        ["->", IMPL],
+        ["+", OR],
+        ["||", OR],
+        ["↑", SHEFFER],
+        ["*", AND],
+        ["&", AND],
+        ["^", XOR],
+        ["!", NOT],
+        ["-", NOT],
+        ["~", NOT],
     ]
 }
 
@@ -121,7 +133,7 @@ LogicalCalculator.prototype.IsConstant = function(lexeme) {
 
 // проверка на число
 LogicalCalculator.prototype.IsNumber = function(lexeme) {
-    return lexeme.match(/^(\d+\.\d+|\d+)$/gi) != null
+    return lexeme == ZERO || lexeme == ONE
 }
 
 // проверка на переменную
@@ -134,25 +146,25 @@ LogicalCalculator.prototype.GetPriority = function(lexeme) {
     if (this.IsFunction(lexeme) || this.IsBinaryFunction(lexeme))
         return 8
 
-    if (lexeme == "¬")
+    if (lexeme == NOT)
         return 7
 
-    if (lexeme == "∧")
+    if (lexeme == AND)
         return 6
 
-    if (lexeme == "∨" || lexeme == "⊕")
+    if (lexeme == OR || lexeme == XOR)
         return 5
 
-    if (lexeme == "↑")
+    if (lexeme == SHEFFER)
         return 4
 
-    if (lexeme == "↓")
+    if (lexeme == PIRS)
         return 3
 
-    if (lexeme == "→")
+    if (lexeme == IMPL)
         return 2
 
-    if (lexeme == "≡")
+    if (lexeme == EQUAL)
         return 1
 
     return 0
@@ -160,7 +172,7 @@ LogicalCalculator.prototype.GetPriority = function(lexeme) {
 
 // проверка, что текущая лексема менее приоритетна лексемы на вершине стека
 LogicalCalculator.prototype.IsMorePriority = function(curr, top) {
-    if (curr == "¬")
+    if (curr == NOT)
         return this.GetPriority(top) > this.GetPriority(curr)
 
     return this.GetPriority(top) >= this.GetPriority(curr)
@@ -179,7 +191,7 @@ LogicalCalculator.prototype.ConvertToRPN = function() {
         else if (this.IsFunction(lexeme) || this.IsBinaryFunction(lexeme)) {
             stack.push(lexeme)
         }
-        else if (this.IsOperator(lexeme) || lexeme == "¬") {
+        else if (this.IsOperator(lexeme) || lexeme == NOT) {
             while (stack.length > 0 && this.IsMorePriority(lexeme, stack[stack.length - 1]))
                 this.rpn.push(stack.pop())
 
@@ -258,7 +270,7 @@ LogicalCalculator.prototype.Evaluate = function() {
 
             stack.push(this.binaryFunctions[lexeme](arg1, arg2))
         }
-        else if (lexeme == "¬") {
+        else if (lexeme == NOT) {
             if (stack.length < 1)
                 throw "Unable to evaluate unary minus"
 
@@ -281,4 +293,426 @@ LogicalCalculator.prototype.Evaluate = function() {
         throw "Incorrect expression"
 
     return stack[0]
+}
+
+// перевод выражения в польской записи в строку
+LogicalCalculator.prototype.ToStringRPN = function(rpn) {
+    let stack = []
+
+    for (let lexeme of rpn.values()) {
+        if (this.IsOperator(lexeme)) {
+            let arg2 = stack.pop()
+            let arg1 = stack.pop()
+
+            stack.push(`(${arg1} ${lexeme} ${arg2})`)
+        }
+        else if (this.IsFunction(lexeme)) {
+            let arg = stack.pop()
+            stack.push(`${lexeme}(${arg})`)
+        }
+        else if (this.IsBinaryFunction(lexeme)) {
+            let arg2 = stack.pop()
+            let arg1 = stack.pop()
+
+            stack.push(`${lexeme}(${arg1}, ${arg2})`)
+        }
+        else if (lexeme == NOT) {
+            stack.push(`¬(${stack.pop()})`)
+        }
+        else if (this.IsConstant(lexeme)) {
+            stack.push(`${this.constants[lexeme]}`)
+        }
+        else if (this.IsVariable(lexeme)) {
+            stack.push(`${lexeme}`)
+        }
+        else if (this.IsNumber(lexeme)) {
+            stack.push(`${lexeme}`)
+        }
+        else
+            throw "Unknown rpn lexeme '" + lexeme + "'"
+    }
+
+    return stack[0]
+}
+
+// перевод выражения в строку
+LogicalCalculator.prototype.ToString = function() {
+    return this.ToStringRPN(this.rpn)
+}
+
+// получение переменных дерева
+LogicalCalculator.prototype.GetTreeVariablesRecursive = function(node, variables) {
+    if (node == null)
+        return
+
+    if (this.IsVariable(node.value) && variables.indexOf(node.value) == -1)
+        variables.push(node.value)
+
+    this.GetTreeVariablesRecursive(node.arg1, variables)
+    this.GetTreeVariablesRecursive(node.arg2, variables)
+}
+
+// получение переменных дерева
+LogicalCalculator.prototype.GetTreeVariables = function(tree) {
+    let variables = []
+    this.GetTreeVariablesRecursive(tree, variables)
+    return variables
+}
+
+// вычисление на дереве
+LogicalCalculator.prototype.EvaluateTree = function(node, variables) {
+    if (this.IsNumber(node.value))
+        return +node.value
+
+    if (this.IsConstant(node.value))
+        return this.constants[node.value]
+
+    if (this.IsVariable(node.value))
+        return variables[node.value]
+
+    if (this.IsFunction(node.value))
+        this.functions[node.value](this.EvaluateTree(node.arg1, variables))
+
+    if (this.IsBinaryFunction(node.value)) {
+        let arg1 = this.EvaluateTree(node.arg1, variables)
+        let arg2 = this.EvaluateTree(node.arg2, variables)
+        this.binaryFunctions[node.value](node.arg1, node.arg2)
+    }
+
+    if (this.IsOperator(node.value)) {
+        let arg1 = this.EvaluateTree(node.arg1, variables)
+        let arg2 = this.EvaluateTree(node.arg2, variables)
+        return this.operators[node.value](arg1, arg2)
+    }
+
+    if (node.value == NOT)
+        return 1 - this.EvaluateTree(node.arg1, variables)
+
+    throw node
+}
+
+// проверка двух деревьев на эквивалентность путём проверки реализуемых функций
+LogicalCalculator.prototype.IsTreesEqualNumerical = function(node1, node2) {
+    let variables1 = this.GetTreeVariables(node1)
+    let variables2 = this.GetTreeVariables(node2)
+    let variables = {}
+
+    for (let variable of variables1.values())
+        variables[variable] = 0
+
+    for (let variable of variables2.values())
+        variables[variable] = 0
+
+    let names = Object.keys(variables)
+
+    if (names.length == 0)
+        return this.EvaluateTree(node1, variables) == this.EvaluateTree(node2, variables)
+
+    let n = names.length
+    let total = 1 << n
+
+    for (let i = 0; i < total; i++) {
+        for (let j = 0; j < n; j++)
+            variables[names[j]] = (i >> j) & 1
+
+        let value1 = this.EvaluateTree(node1, variables)
+        let value2 = this.EvaluateTree(node2, variables)
+
+        if (value1 != value2)
+            return false
+    }
+
+    return true
+}
+
+// проверка двух деревьев на эквивалентность
+LogicalCalculator.prototype.IsTreesEqual = function(node1, node2) {
+    if (this.IsTreesEqualNumerical(node1, node2))
+        return true
+
+    if (node1 == null && node2 == null)
+        return true
+
+    if (node1 == null || node2 == null)
+        return false
+
+    if (node1.value != node2.value)
+        return false
+
+    return this.IsTreesEqual(node1.arg1, node2.arg1) && this.IsTreesEqual(node1.arg2, node2.arg2)
+}
+
+// упрощение дерева для отрицания
+LogicalCalculator.prototype.SimplifyTreeNot = function(node) {
+    if (node.arg1.value == ONE )
+        return {value: ZERO, arg1: null, arg2: null}
+
+    if (node.arg1.value == ZERO )
+        return {value: ONE, arg1: null, arg2: null}
+
+    return node
+}
+
+// упрощение дерева для конъюнкции
+LogicalCalculator.prototype.SimplifyTreeAnd = function(node) {
+    if (node.arg1.value == ZERO || node.arg2.value == ZERO)
+        return {value: ZERO, arg1: null, arg2: null}
+
+    if (node.arg1.value == ONE)
+        return node.arg2
+
+    if (node.arg2.value == ONE)
+        return node.arg1
+
+    if (this.IsTreesEqual(node.arg1, node.arg2))
+        return node.arg1
+
+    return node
+}
+
+// упрощение дерева для дизъюнкции
+LogicalCalculator.prototype.SimplifyTreeOr = function(node) {
+    if (node.arg1.value == ONE || node.arg2.value == ONE)
+        return {value: ONE, arg1: null, arg2: null}
+
+    if (node.arg1.value == ZERO)
+        return node.arg2
+
+    if (node.arg2.value == ZERO)
+        return node.arg1
+
+    if (this.IsTreesEqual(node.arg1, node.arg2))
+        return node.arg1
+
+    return node
+}
+
+// упрощение дерева для исключающего или
+LogicalCalculator.prototype.SimplifyTreeXor = function(node) {
+    if (node.arg1.value == ZERO)
+        return node.arg2
+
+    if (node.arg2.value == ZERO)
+        return node.arg1
+
+    if (node.arg1.value == ONE && node.arg2.value == ONE)
+        return {value: ZERO, arg1: null, arg2: null}
+
+    if (node.arg1.value == ONE)
+        return {value: NOT, arg1: node.arg2, arg2: null}
+
+    if (node.arg2.value == ONE)
+        return {value: NOT, arg1: node.arg1, arg2: null}
+
+    if (this.IsTreesEqual(node.arg1, node.arg2))
+        return {value: ZERO, arg1: null, arg2: null}
+
+    return node
+}
+
+// упрощение дерева для штриха Шеффера
+LogicalCalculator.prototype.SimplifyTreeSheffer = function(node) {
+    if (node.arg1.value == ZERO || node.arg2.value == ZERO)
+        return {value: ONE, arg1: null, arg2: null}
+
+    if (node.arg1.value == ONE && node.arg2.value == ONE)
+        return {value: ZERO, arg1: null, arg2: null}
+
+    if (node.arg1.value == ONE)
+        return {value: NOT, arg1: node.arg2, arg2: null}
+
+    if (node.arg2.value == ONE)
+        return {value: NOT, arg1: node.arg1, arg2: null}
+
+    if (this.IsTreesEqual(node.arg1, node.arg2))
+        return {value: NOT, arg1: node.arg1, arg2: null}
+
+    return node
+}
+
+// упрощение дерева для стрелки Пирса
+LogicalCalculator.prototype.SimplifyTreePirs = function(node) {
+    if (node.arg1.value == ONE || node.arg2.value == ONE)
+        return {value: ZERO, arg1: null, arg2: null}
+
+    if (node.arg1.value == ZERO && node.arg2.value == ZERO)
+        return {value: ONE, arg1: null, arg2: null}
+
+    if (node.arg1.value == ZERO)
+        return {value: NOT, arg1: node.arg2, arg2: null}
+
+    if (node.arg2.value == ZERO)
+        return {value: NOT, arg1: node.arg1, arg2: null}
+
+    if (this.IsTreesEqual(node.arg1, node.arg2))
+        return {value: NOT, arg1: node.arg1, arg2: null}
+
+    return node
+}
+
+// упрощение дерева для импликации
+LogicalCalculator.prototype.SimplifyTreeImpl = function(node) {
+    if (node.arg1.value == ZERO || node.arg2.value == ONE)
+        return {value: ONE, arg1: null, arg2: null}
+
+    if (node.arg1.value == ONE)
+        return node.arg2
+
+    if (node.arg2.value == ZERO)
+        return node.arg1
+
+    if (this.IsTreesEqual(node.arg1, node.arg2))
+        return {value: ONE, arg1: null, arg2: null}
+
+    return node
+}
+
+// упрощение дерева для эквивалентности
+LogicalCalculator.prototype.SimplifyTreeEqual = function(node) {
+    if (node.arg1.value == ONE && node.arg2.value == ONE)
+        return {value: ONE, arg1: null, arg2: null}
+
+    if (node.arg1.value == ZERO && node.arg2.value == ZERO)
+        return {value: ONE, arg1: null, arg2: null}
+
+    if (this.IsTreesEqual(node.arg1, node.arg2))
+        return {value: ONE, arg1: null, arg2: null}
+
+    return node
+}
+
+// упрощение путём подбора пары элементарных функций 0, 1 и 2 переменных
+LogicalCalculator.prototype.SimplifyByElementaryFunctions = function(node) {
+    let variables = this.GetTreeVariables(node)
+
+    if (variables.length == 0)
+        return {value: this.EvaluateTree(node, {}) + "", arg1: null, arg2: null}
+
+    // проверка на переменную или её отрицание
+    for (let variable of variables) {
+        let arg = {value: variable, arg1: null, arg2: null}
+
+        if (this.IsTreesEqual(node, arg))
+            return arg
+
+        let f = {value: NOT, arg1: arg, arg2: null}
+
+        if (this.IsTreesEqual(node, f))
+            return f
+    }
+
+    // проверка на одну из функций от двух аргументов
+    for (let variable1 of variables) {
+        for (let variable2 of variables) {
+            if (variable1 == variable2)
+                continue
+
+            let arg1 = {value: variable1, arg1: null, arg2: null}
+            let arg2 = {value: variable2, arg1: null, arg2: null}
+
+            for (let op of [AND, OR, EQUAL, XOR, IMPL]) {
+                let f = {value: op, arg1: arg1, arg2: arg2}
+
+                if (this.IsTreesEqual(node, f))
+                    return f
+            }
+        }
+    }
+
+    return node
+}
+
+// упрощение дерева
+LogicalCalculator.prototype.SimplifyTree = function(node) {
+    if (node == null)
+        return node
+
+    // упрощаем всё уровнями ниже
+    node.arg1 = this.SimplifyTree(node.arg1)
+    node.arg2 = this.SimplifyTree(node.arg2)
+    node = this.SimplifyByElementaryFunctions(node)
+
+    if (node.value == NOT)
+        return this.SimplifyTreeNot(node)
+
+    if (!this.IsOperator(node.value)) // если не оператор
+        return node // то не упрощаем
+
+
+    if (node.value == AND)
+        return this.SimplifyTreeAnd(node)
+
+    if (node.value == OR)
+        return this.SimplifyTreeOr(node)
+
+    if (node.value == XOR)
+        return this.SimplifyTreeXor(node)
+
+    if (node.value == SHEFFER)
+        return this.SimplifyTreeSheffer(node)
+
+    if (node.value == PIRS)
+        return this.SimplifyTreePirs(node)
+
+    if (node.value == IMPL)
+        return this.SimplifyTreeImpl(node)
+
+    if (node.value == EQUAL)
+        return this.SimplifyTreeEqual(node)
+
+    return node
+}
+
+// формирование дерева выражения по польской записи
+LogicalCalculator.prototype.MakeTree = function(rpn, needSimplify = true) {
+    let tree = null
+    let stack = []
+
+    for (let lexeme of rpn.values()) {
+        if (this.IsOperator(lexeme) || this.IsBinaryFunction(lexeme)) {
+            let arg2 = stack.pop()
+            let arg1 = stack.pop()
+
+            stack.push({value: lexeme, arg1: arg1, arg2: arg2})
+        }
+        else if (this.IsFunction(lexeme)) {
+            if (stack.length < 1)
+                throw "Unable to evaluate function '" + lexeme + "'"
+
+            stack.push({value: lexeme, arg1: stack.pop(), arg2: null})
+        }
+        else if (lexeme == NOT) {
+            if (stack.length < 1)
+                throw "Unable to evaluate unary minus"
+
+            stack.push({value: lexeme, arg1: stack.pop(), arg2: null})
+        }
+        else if (this.IsConstant(lexeme) || this.IsVariable(lexeme) || this.IsNumber(lexeme)) {
+            stack.push({value: lexeme, arg1: null, arg2: null})
+        }
+        else
+            throw "Unknown rpn lexeme '" + lexeme + "'"
+    }
+
+    if (needSimplify)
+        return this.SimplifyTree(stack[0])
+
+    return stack[0]
+}
+
+// перевод из дерева в польскую запись
+LogicalCalculator.prototype.TreeToRpnRecursive = function(node, rpn) {
+    if (node == null)
+        return
+
+    this.TreeToRpnRecursive(node.arg1, rpn)
+    this.TreeToRpnRecursive(node.arg2, rpn)
+    rpn.push(node.value)
+}
+
+// перевод из дерева в польскую запись
+LogicalCalculator.prototype.TreeToRpn = function(tree) {
+    let rpn = []
+    this.TreeToRpnRecursive(tree, rpn)
+    return rpn
 }
