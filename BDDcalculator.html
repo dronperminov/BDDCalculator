@@ -14,6 +14,9 @@
         #inputBox { width: 300px; }
         #variablesBox { width: 317px; }
 
+        .keyboard { padding: 5px 0 }
+        .btn { width: 25px; height: 25px; border: 1px solid #000; text-align: center; display: table-cell; vertical-align: middle; cursor: pointer; border-radius: 2px; padding: 2px; }
+        .btn:hover { background: #fefeff; border-top: 2px solid #000; border-bottom: 0 }
         .bdd-calculator { display: table; width: 100% }
         .bdd-calculator-controls { display: table-cell; vertical-align: top; width: 50% }
         .bdd-calculator-view { display: table-cell; vertical-align: top; width: 50%; padding: 10px }
@@ -27,6 +30,40 @@
         <div class="bdd-calculator-controls">
             <p><label>Выражение: <input type="text" id="inputBox" value="x1 + x2 ^ x3"></label>
             <input type="submit" onclick="calculator.Solve()" value="Построить"></p>
+            <div class="keyboard">
+                <div>
+                    <div class="btn" onclick="AppendChar('∨')">∨</div>
+                    <div class="btn" onclick="AppendChar('∧')">∧</div>
+                    <div class="btn" onclick="AppendChar('¬')">¬</div>
+                    <div class="btn" onclick="AppendChar('⊕')">⊕</div>
+                    <div class="btn" onclick="AppendChar('→')">→</div>
+                    <div class="btn" onclick="AppendChar('≡')">≡</div>
+                    <div class="btn" onclick="AppendChar('↓')">↓</div>
+                    <div class="btn" onclick="AppendChar('|')">|</div>
+                </div>
+
+                <div>
+                    <div class="btn" onclick="AppendChar('0')">0</div>
+                    <div class="btn" onclick="AppendChar('1')">1</div>
+                    <div class="btn" onclick="AppendChar('a')">a</div>
+                    <div class="btn" onclick="AppendChar('b')">b</div>
+                    <div class="btn" onclick="AppendChar('c')">c</div>
+                    <div class="btn" onclick="AppendChar('x')">x</div>
+                    <div class="btn" onclick="AppendChar('y')">y</div>
+                    <div class="btn" onclick="AppendChar('z')">z</div>
+                </div>
+
+                <div>
+                    <div class="btn" onclick="AppendChar('(')">(</div>
+                    <div class="btn" onclick="AppendChar(')')">)</div>
+                    <div class="btn" onclick="AppendChar('x1')">x1</div>
+                    <div class="btn" onclick="AppendChar('x2')">x2</div>
+                    <div class="btn" onclick="AppendChar('x3')">x3</div>
+                    <div class="btn" onclick="AppendChar('x4')">x4</div>
+                    <div class="btn" onclick="AppendChar('x5')">x5</div>
+                    <div class="btn" onclick="AppendChar('x6')">x6</div>
+                </div>
+            </div>
             <label>Порядок переменных: <input type="text" id="variablesBox" value="x1 x2 x3"></label>
             <div id="resultBox"></div>
         </div>
@@ -40,6 +77,23 @@
     <script src="BDDCalculator.js"></script>
 
     <script>
+        function AppendChar(c) {
+            let inputBox = document.getElementById("inputBox")
+
+            if (document.selection) {
+                inputBox.focus()
+                sel = document.selection.createRange()
+                sel.text = c
+            }
+            else if (inputBox.selectionStart || inputBox.selectionStart == '0') {
+                let startPos = +inputBox.selectionStart
+                let endPos = inputBox.selectionEnd
+                inputBox.value = inputBox.value.substring(0, startPos) + c + inputBox.value.substring(endPos, inputBox.value.length)
+            } else {
+                inputBox.value += c;
+            }
+        }
+
         let inputBox = document.getElementById("inputBox")
         let variablesBox = document.getElementById("variablesBox")
         let resultBox = document.getElementById("resultBox")
