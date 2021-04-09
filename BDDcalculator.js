@@ -20,6 +20,14 @@ BDDCalculator.prototype.Solve = function() {
         let funcTable = new FunctionTable(this.inputBox.value)
         let variablesNames = this.variablesBox.value.split(/ +/g)
 
+        this.ctx.fillStyle = '#000'
+        this.ctx.textAlign = 'left'
+        this.ctx.textBaseline = 'middle'
+        this.ctx.font = '18px Consolas'
+
+        this.ctx.fillText("Формула: " + funcTable.calculator.expression, 10, 18)
+        this.ctx.fillText("Порядок переменных: " + variablesNames.join(", "), 10, 40)
+
         if (!funcTable.HaveAllVariables(variablesNames))
             throw "Variable names not match with variables in expression"
 
