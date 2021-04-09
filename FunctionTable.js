@@ -1,8 +1,10 @@
-function FunctionTable(calculator, values, vector) {
-    this.calculator = calculator
-    this.variables = calculator.variables
-    this.values = values
-    this.vector = vector
+function FunctionTable(expression) {
+    this.calculator = new LogicalCalculator(expression)
+    this.variables = this.calculator.variables
+
+    let func = this.CalculateFunction()
+    this.values = func.values
+    this.vector = func.vector
 }
 
 // добавление в строку tr ячейки с текстом text
@@ -10,6 +12,29 @@ FunctionTable.prototype.AddCell = function(tr, text, name="td") {
     let cell = document.createElement(name)
     cell.innerText = text
     tr.appendChild(cell)
+}
+
+// вычисление значений функции на наборе переменных
+FunctionTable.prototype.CalculateFunction = function() {
+    let variables = Object.keys(this.calculator.variables)
+    let total = 1 << variables.length
+
+    let values = []
+    let vector = []
+
+    for (let i = 0; i < total; i++) {
+        let values_row = []
+
+        for (let j = 0; j < variables.length; j++) {
+            values_row.push((i >> (variables.length - 1 - j)) & 1)
+            this.calculator.SetValue(variables[j], values_row[j])
+        }
+
+        values.push(values_row)
+        vector.push(this.calculator.Evaluate())
+    }
+
+    return {values:values, vector:vector}
 }
 
 // перевод в HTML таблицу
@@ -65,7 +90,6 @@ FunctionTable.prototype.SplitByVariable = function(name) {
     console.log("FALSE TREE VARIABLES:", this.calculator.GetTreeVariables(false_tree))
     false_rpn = this.calculator.TreeToRpn(false_tree)
     console.log("FALSE RPN (AFTER):", false_rpn)
-
 
     let true_expression = this.calculator.ToStringRPN(true_rpn)
     let false_expression = this.calculator.ToStringRPN(false_rpn)
