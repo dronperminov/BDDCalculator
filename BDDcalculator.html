@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title></title>
+
+    <meta charset="utf-8">
+
+    <style>
+        table { border-collapse: collapse; }
+        td, th { border: 1px solid #000; padding: 0 5px }
+        p { margin: 5px 0 5px 0; }
+    </style>
+</head>
+<body>
+    <h1>BDD calculator</h1>
+
+    <div class="bdd-calculator">
+        <input type="text" id="inputBox" value="x1 + x2">
+        <input type="submit" onclick="calculator.Solve()" value="Solve">
+        <div id="resultBox"></div>
+    </div>
+
+    <script src="LogicalCalculator.js"></script>
+    <script src="BDDCalculator.js"></script>
+
+    <script>
+        let inputBox = document.getElementById("inputBox")
+        let resultBox = document.getElementById("resultBox")
+        let calculator = new BDDCalculator(inputBox, resultBox)
+        calculator.Solve()
+    </script>
+</body>
+</html>
