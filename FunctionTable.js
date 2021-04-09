@@ -101,11 +101,26 @@ FunctionTable.prototype.SplitByVariable = function(name) {
     return {trueExpression: trueExpression, falseExpression: falseExpression}
 }
 
-FunctionTable.prototype.BuildROBDD = function(applyes, solve) {
+FunctionTable.prototype.GetKey = function() {
+    if (this.expression == "0")
+        return LEAF_ZERO
+
+    if (this.expression == "1")
+        return LEAF_ONE
+
+    return this.expression
+}
+
+FunctionTable.prototype.BuildROBDD = function(applyes, solve, level = 0, index = 0) {
     let variables = Object.keys(this.calculator.variables)
 
-    if (variables.length == 0)
-        return this.calculator.Evaluate() == 1 ? LEAF_ONE : LEAF_ZERO
+    if (variables.length == 0) {
+        let result = this.calculator.Evaluate()
+        let value = result == 1 ? LEAF_ONE : LEAF_ZERO
+        let node = {value: value, low: null, high: null, level: level, index: result == 1 ? 1 : -1 }
+        applyes[value] = node
+        return node
+    }
 
     let variable = variables[0]
     let splited = this.SplitByVariable(variable) // сплитим по первой доступной переменной
@@ -116,11 +131,10 @@ FunctionTable.prototype.BuildROBDD = function(applyes, solve) {
     let printLow = ["0", "1"].indexOf(tableLow.expression) > -1 ? "[" + tableLow.expression + "]" : "Apply(" + tableLow.expression + ")"
 
     solve.push("Apply(" + this.expression + ") = Reduce(Compose(" + variable + ", " + printHigh +", " + printLow + "))")
-    console.log(solve[solve.length - 1])
 
-    let high = tableHigh.expression in applyes ? applyes[tableHigh.expression] : tableHigh.BuildROBDD(applyes, solve)
-    let low = tableLow.expression in applyes ? applyes[tableLow.expression] : tableLow.BuildROBDD(applyes, solve)
-    let node = {value: variable, high: high, low: low }
+    let high = tableHigh.GetKey() in applyes ? applyes[tableHigh.GetKey()] : tableHigh.BuildROBDD(applyes, solve, level + 1, 2 * index + 2)
+    let low = tableLow.GetKey() in applyes ? applyes[tableLow.GetKey()] : tableLow.BuildROBDD(applyes, solve, level + 1, 2 * index + 1)
+    let node = {value: variable, high: high, low: low, level: level, index: index }
 
     applyes[this.expression] = node
 
