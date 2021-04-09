@@ -6,11 +6,13 @@
     <meta charset="utf-8">
 
     <style>
+        h1 { margin-bottom: 5px }
         table { border-collapse: collapse; }
         td, th { border: 1px solid #000; padding: 0 5px }
         p { margin: 5px 0 5px 0; }
 
         #inputBox { width: 300px; }
+        #variablesBox { width: 317px; }
 
         .bdd-calculator { display: table; width: 100% }
         .bdd-calculator-controls { display: table-cell; vertical-align: top; width: 50% }
@@ -19,12 +21,13 @@
     </style>
 </head>
 <body>
-    <h1>BDD calculator</h1>
+    <h1>Калькулятор для построения BDD поформуле алгебры логики</h1>
 
     <div class="bdd-calculator">
         <div class="bdd-calculator-controls">
-            <input type="text" id="inputBox" value="x1 + x2 ^ x3">
-            <input type="submit" onclick="calculator.Solve()" value="Solve">
+            <p><label>Выражение: <input type="text" id="inputBox" value="x1 + x2 ^ x3"></label>
+            <input type="submit" onclick="calculator.Solve()" value="Построить"></p>
+            <label>Порядок переменных: <input type="text" id="variablesBox" value="x1 x2 x3"></label>
             <div id="resultBox"></div>
         </div>
         <div id="calculator-view" class="bdd-calculator-view">
@@ -38,10 +41,11 @@
 
     <script>
         let inputBox = document.getElementById("inputBox")
+        let variablesBox = document.getElementById("variablesBox")
         let resultBox = document.getElementById("resultBox")
         let canvas = document.getElementById("canvas")
         let size = 800
-        let calculator = new BDDCalculator(inputBox, resultBox, canvas, size, size)
+        let calculator = new BDDCalculator(inputBox, variablesBox, resultBox, canvas, size, size)
         calculator.Solve()
     </script>
 </body>

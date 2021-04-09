@@ -11,6 +11,24 @@ function FunctionTable(expression) {
     this.vector = func.vector
 }
 
+// все ли переменные присутствуют
+FunctionTable.prototype.HaveAllVariables = function(variablesNames) {
+    let variables = Object.keys(this.calculator.variables)
+
+    if (variables.length != variablesNames.length)
+        return false
+
+    for (let i = 0; i < variables.length; i++) {
+        if (variablesNames.indexOf(variables[i]) == -1)
+            return false
+
+        if (variables.indexOf(variablesNames[i]) == -1)
+            return false
+    }
+
+    return true
+}
+
 // добавление в строку tr ячейки с текстом text
 FunctionTable.prototype.AddCell = function(tr, text, name="td") {
     let cell = document.createElement(name)
@@ -81,17 +99,6 @@ FunctionTable.prototype.SplitByVariable = function(name) {
     let trueTree = this.calculator.MakeTree(trueRpn)
     let falseTree = this.calculator.MakeTree(falseRpn)
 
-    /*console.log("-------------------------------------------------------")
-    console.log("Split by", name)
-    console.log("TRUE RPN (BEFORE):", this.calculator.ToStringRPN(trueRpn))
-    console.log("TRUE TREE:", trueTree)
-    console.log("TRUE TREE VARIABLES:", this.calculator.GetTreeVariables(trueTree))
-    console.log("TRUE RPN (AFTER):", this.calculator.ToStringRPN(trueRpn))
-
-    console.log("FALSE RPN (BEFORE):", falseRpn)
-    console.log("FALSE TREE:", falseTree)
-    console.log("FALSE TREE VARIABLES:", this.calculator.GetTreeVariables(falseTree))
-    console.log("FALSE RPN (AFTER):", falseRpn)*/
     trueRpn = this.calculator.TreeToRpn(trueTree)
     falseRpn = this.calculator.TreeToRpn(falseTree)
 
@@ -111,7 +118,7 @@ FunctionTable.prototype.GetKey = function() {
     return this.expression
 }
 
-FunctionTable.prototype.BuildROBDD = function(applyes, solve, level = 0, index = 0) {
+FunctionTable.prototype.BuildROBDD = function(variablesNames, applyes, solve, level = 0, index = 0) {
     let variables = Object.keys(this.calculator.variables)
 
     if (variables.length == 0) {
@@ -122,7 +129,13 @@ FunctionTable.prototype.BuildROBDD = function(applyes, solve, level = 0, index =
         return node
     }
 
-    let variable = variables[0]
+    let i = 0
+
+    while (variables.indexOf(variablesNames[i]) == -1)
+        i++
+
+    let variable = variablesNames[i]
+
     let splited = this.SplitByVariable(variable) // сплитим по первой доступной переменной
     let tableLow = new FunctionTable(splited.falseExpression)
     let tableHigh = new FunctionTable(splited.trueExpression)
@@ -132,8 +145,8 @@ FunctionTable.prototype.BuildROBDD = function(applyes, solve, level = 0, index =
 
     solve.push("Apply(" + this.expression + ") = Reduce(Compose(" + variable + ", " + printHigh +", " + printLow + "))")
 
-    let high = tableHigh.GetKey() in applyes ? applyes[tableHigh.GetKey()] : tableHigh.BuildROBDD(applyes, solve, level + 1, 2 * index + 2)
-    let low = tableLow.GetKey() in applyes ? applyes[tableLow.GetKey()] : tableLow.BuildROBDD(applyes, solve, level + 1, 2 * index + 1)
+    let high = tableHigh.GetKey() in applyes ? applyes[tableHigh.GetKey()] : tableHigh.BuildROBDD(variablesNames, applyes, solve, level + 1, 2 * index + 2)
+    let low = tableLow.GetKey() in applyes ? applyes[tableLow.GetKey()] : tableLow.BuildROBDD(variablesNames, applyes, solve, level + 1, 2 * index + 1)
     let node = {value: variable, high: high, low: low, level: level, index: index }
 
     applyes[this.expression] = node
@@ -141,10 +154,10 @@ FunctionTable.prototype.BuildROBDD = function(applyes, solve, level = 0, index =
     return node
 }
 
-FunctionTable.prototype.GetROBDD = function() {
+FunctionTable.prototype.GetROBDD = function(variablesNames) {
     let applyes = {}
     let solve = []
-    let robdd = this.BuildROBDD(applyes, solve)
+    let robdd = this.BuildROBDD(variablesNames, applyes, solve)
 
     return {applyes: applyes, solve: solve, robdd: robdd}
 }

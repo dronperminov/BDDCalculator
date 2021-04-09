@@ -1,5 +1,6 @@
-function BDDCalculator(inputBox, resultBox, canvas, width, height) {
+function BDDCalculator(inputBox, variablesBox, resultBox, canvas, width, height) {
     this.inputBox = inputBox
+    this.variablesBox = variablesBox
     this.resultBox = resultBox
     
     this.canvas = canvas
@@ -17,6 +18,10 @@ BDDCalculator.prototype.Solve = function() {
         this.ctx.clearRect(0, 0, this.width, this.height)
 
         let funcTable = new FunctionTable(this.inputBox.value)
+        let variablesNames = this.variablesBox.value.split(/ +/g)
+
+        if (!funcTable.HaveAllVariables(variablesNames))
+            throw "Variable names not match with variables in expression"
 
         this.resultBox.innerHTML = "<p><b>Введённое выражение:</b> " + funcTable.calculator.expression + "</p>"
         this.resultBox.innerHTML += "<p><b>Распаршенное выражение:</b> " + funcTable.calculator.ToString() + "</p>"
@@ -34,7 +39,7 @@ BDDCalculator.prototype.Solve = function() {
             this.resultBox.innerHTML += "</p>"
         }
 
-        let robdd = funcTable.GetROBDD()
+        let robdd = funcTable.GetROBDD(variablesNames)
 
         this.DrawBDD(robdd.robdd, robdd.applyes)
 
