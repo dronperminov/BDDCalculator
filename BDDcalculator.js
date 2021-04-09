@@ -20,10 +20,22 @@ BDDCalculator.prototype.Solve = function() {
         for (let i = 0; i < variables.length; i++) {
             this.resultBox.innerHTML += "<p><b>Разбиение по переменной " + variables[i] + ":</b><br>"
             let splited = funcTable.SplitByVariable(variables[i])
-            this.resultBox.innerHTML += "TRUE: " + splited.true_expression + "<br>"
-            this.resultBox.innerHTML += "FALSE: " + splited.false_expression
+            this.resultBox.innerHTML += "TRUE: " + splited.trueExpression + "<br>"
+            this.resultBox.innerHTML += "FALSE: " + splited.falseExpression
             this.resultBox.innerHTML += "</p>"
         }
+
+        console.log("=====================================")
+        console.log("ROBDD")
+        console.log("=====================================")
+
+        let robdd = funcTable.GetROBDD()
+
+        this.resultBox.innerHTML += "<p><b>Построение ROBDD:</b><br>"
+        this.resultBox.innerHTML += robdd.solve.join("<br>")
+        this.resultBox.innerHTML += "</p>"
+
+        console.log(robdd.robdd)
     }
     catch (error) {
         this.resultBox.innerHTML += "<p><b>Ошибка:</b> " + error + "</p>"

@@ -1,5 +1,9 @@
+const LEAF_ONE = "[1]"
+const LEAF_ZERO = "[0]"
+
 function FunctionTable(expression) {
     this.calculator = new LogicalCalculator(expression)
+    this.expression = this.calculator.expression
     this.variables = this.calculator.variables
 
     let func = this.CalculateFunction()
@@ -64,35 +68,69 @@ FunctionTable.prototype.ToHTML = function() {
 
 // разбиение по переменной
 FunctionTable.prototype.SplitByVariable = function(name) {
-    let true_rpn = Array.from(this.calculator.rpn)
-    let false_rpn = Array.from(this.calculator.rpn)
+    let trueRpn = Array.from(this.calculator.rpn)
+    let falseRpn = Array.from(this.calculator.rpn)
 
     for (let i = 0; i < this.calculator.rpn.length; i++) {
         if (this.calculator.IsVariable(this.calculator.rpn[i]) && this.calculator.rpn[i] == name) {
-            true_rpn[i] = "1"
-            false_rpn[i] = "0"
+            trueRpn[i] = "1"
+            falseRpn[i] = "0"
         }
     }
 
-    let true_tree = this.calculator.MakeTree(true_rpn)
-    let false_tree = this.calculator.MakeTree(false_rpn)
+    let trueTree = this.calculator.MakeTree(trueRpn)
+    let falseTree = this.calculator.MakeTree(falseRpn)
 
-    console.log("-------------------------------------------------------")
+    /*console.log("-------------------------------------------------------")
     console.log("Split by", name)
-    console.log("TRUE RPN (BEFORE):", this.calculator.ToStringRPN(true_rpn))
-    console.log("TRUE TREE:", true_tree)
-    console.log("TRUE TREE VARIABLES:", this.calculator.GetTreeVariables(true_tree))
-    true_rpn = this.calculator.TreeToRpn(true_tree)
-    console.log("TRUE RPN (AFTER):", this.calculator.ToStringRPN(true_rpn))
+    console.log("TRUE RPN (BEFORE):", this.calculator.ToStringRPN(trueRpn))
+    console.log("TRUE TREE:", trueTree)
+    console.log("TRUE TREE VARIABLES:", this.calculator.GetTreeVariables(trueTree))
+    console.log("TRUE RPN (AFTER):", this.calculator.ToStringRPN(trueRpn))
 
-    console.log("FALSE RPN (BEFORE):", false_rpn)
-    console.log("FALSE TREE:", false_tree)
-    console.log("FALSE TREE VARIABLES:", this.calculator.GetTreeVariables(false_tree))
-    false_rpn = this.calculator.TreeToRpn(false_tree)
-    console.log("FALSE RPN (AFTER):", false_rpn)
+    console.log("FALSE RPN (BEFORE):", falseRpn)
+    console.log("FALSE TREE:", falseTree)
+    console.log("FALSE TREE VARIABLES:", this.calculator.GetTreeVariables(falseTree))
+    console.log("FALSE RPN (AFTER):", falseRpn)*/
+    trueRpn = this.calculator.TreeToRpn(trueTree)
+    falseRpn = this.calculator.TreeToRpn(falseTree)
 
-    let true_expression = this.calculator.ToStringRPN(true_rpn)
-    let false_expression = this.calculator.ToStringRPN(false_rpn)
+    let trueExpression = this.calculator.ToStringRPN(trueRpn)
+    let falseExpression = this.calculator.ToStringRPN(falseRpn)
 
-    return {true_expression: true_expression, false_expression: false_expression}
+    return {trueExpression: trueExpression, falseExpression: falseExpression}
+}
+
+FunctionTable.prototype.BuildROBDD = function(applyes, solve) {
+    let variables = Object.keys(this.calculator.variables)
+
+    if (variables.length == 0)
+        return this.calculator.Evaluate() == 1 ? LEAF_ONE : LEAF_ZERO
+
+    let variable = variables[0]
+    let splited = this.SplitByVariable(variable) // сплитим по первой доступной переменной
+    let tableLow = new FunctionTable(splited.falseExpression)
+    let tableHigh = new FunctionTable(splited.trueExpression)
+
+    let printHigh = ["0", "1"].indexOf(tableHigh.expression) > -1 ? "[" + tableHigh.expression + "]" : "Apply(" + tableHigh.expression + ")"
+    let printLow = ["0", "1"].indexOf(tableLow.expression) > -1 ? "[" + tableLow.expression + "]" : "Apply(" + tableLow.expression + ")"
+
+    solve.push("Apply(" + this.expression + ") = Reduce(Compose(" + variable + ", " + printHigh +", " + printLow + "))")
+    console.log(solve[solve.length - 1])
+
+    let high = tableHigh.expression in applyes ? applyes[tableHigh.expression] : tableHigh.BuildROBDD(applyes, solve)
+    let low = tableLow.expression in applyes ? applyes[tableLow.expression] : tableLow.BuildROBDD(applyes, solve)
+    let node = {value: variable, high: high, low: low }
+
+    applyes[this.expression] = node
+
+    return node
+}
+
+FunctionTable.prototype.GetROBDD = function() {
+    let applyes = {}
+    let solve = []
+    let robdd = this.BuildROBDD(applyes, solve)
+
+    return {applyes: applyes, solve: solve, robdd: robdd}
 }
