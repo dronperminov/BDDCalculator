@@ -343,6 +343,9 @@ LogicalCalculator.prototype.IsTreesEqualNumerical = function(node1, node2) {
     let variables2 = this.GetTreeVariables(node2)
     let variables = {}
 
+    if (variables1.length != variables2.length)
+        return false
+
     for (let variable of variables1.values())
         variables[variable] = 0
 
@@ -373,17 +376,14 @@ LogicalCalculator.prototype.IsTreesEqualNumerical = function(node1, node2) {
 
 // проверка двух деревьев на эквивалентность
 LogicalCalculator.prototype.IsTreesEqual = function(node1, node2) {
-    if (this.IsTreesEqualNumerical(node1, node2))
-        return true
-
     if (node1 == null && node2 == null)
         return true
 
     if (node1 == null || node2 == null)
-        return false
+        return this.IsTreesEqualNumerical(node1, node2)
 
     if (node1.value != node2.value)
-        return false
+        return this.IsTreesEqualNumerical(node1, node2)
 
     return this.IsTreesEqual(node1.arg1, node2.arg1) && this.IsTreesEqual(node1.arg2, node2.arg2)
 }
@@ -510,7 +510,7 @@ LogicalCalculator.prototype.SimplifyTreeImpl = function(node) {
         return node.arg2
 
     if (node.arg2.value == ZERO)
-        return node.arg1
+        return this.MakeNode(NOT, node.arg1)
 
     if (this.IsTreesEqual(node.arg1, node.arg2))
         return this.MakeNode(ONE)
