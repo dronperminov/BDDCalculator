@@ -625,6 +625,23 @@ LogicalCalculator.prototype.SimplifyByElementaryFunctions = function(node) {
         }
     }
 
+    for (let variable1 of variables) {
+        for (let variable2 of variables) {
+            if (variable1 == variable2)
+                continue
+
+            let arg1 = {value: NOT, arg1: {value: variable1, arg1: null, arg2: null}, arg2: null}
+            let arg2 = {value: NOT, arg1: {value: variable2, arg1: null, arg2: null}, arg2: null}
+
+            for (let op of [AND, OR, EQUAL, XOR, IMPL]) {
+                let f = {value: op, arg1: arg1, arg2: arg2}
+
+                if (this.IsTreesEqual(node, f))
+                    return f
+            }
+        }
+    }
+
     return node
 }
 
