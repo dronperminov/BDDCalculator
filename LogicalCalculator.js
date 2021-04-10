@@ -588,6 +588,12 @@ LogicalCalculator.prototype.SimplifyByElementaryFunctions = function(node) {
     if (variables.length == 0)
         return {value: this.EvaluateTree(node, {}) + "", arg1: null, arg2: null}
 
+    if (this.IsTreesEqual(node, {value: ZERO, arg1: null, arg2: null}))
+        return {value: ZERO, arg1: null, arg2: null}
+
+    if (this.IsTreesEqual(node, {value: ONE, arg1: null, arg2: null}))
+        return {value: ONE, arg1: null, arg2: null}
+
     // проверка на переменную или её отрицание
     for (let variable of variables) {
         let arg = {value: variable, arg1: null, arg2: null}
