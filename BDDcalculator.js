@@ -79,9 +79,8 @@ BDDCalculator.prototype.Solve = function() {
         console.log(expression)
         this.funcTable = new FunctionTable(expression)
         this.variablesNames = this.variablesBox.value.split(/ +/g)
-
-        if (!this.funcTable.HaveAllVariables(this.variablesNames))
-            throw "Variable names not match with variables in expression"
+        this.variablesNames = this.funcTable.FixVariables(this.variablesNames)
+        this.variablesBox.value = this.variablesNames.join(" ")
 
         let parsedExpression = this.funcTable.calculator.ToString()
         let simplifiedExpression = this.funcTable.GetSimplifiedExpression()

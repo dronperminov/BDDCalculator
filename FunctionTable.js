@@ -11,22 +11,33 @@ function FunctionTable(expression) {
     this.vector = func.vector
 }
 
-// все ли переменные присутствуют
-FunctionTable.prototype.HaveAllVariables = function(variablesNames) {
+// правка заданных переменных
+FunctionTable.prototype.FixVariables = function(variablesNames) {
     let variables = Object.keys(this.calculator.variables)
+    let extra = []
+    let forgotten = []
 
-    if (variables.length != variablesNames.length)
-        return false
-
-    for (let i = 0; i < variables.length; i++) {
+    for (let i = 0; i < variables.length; i++)
         if (variablesNames.indexOf(variables[i]) == -1)
-            return false
+            forgotten.push(variables[i])
 
+    for (let i = 0; i < variablesNames.length; i++)
         if (variables.indexOf(variablesNames[i]) == -1)
-            return false
+            extra.push(variablesNames[i])
+
+    for (let i = 0; i < extra.length; i++) {
+        let index = variablesNames.indexOf(extra[i])
+        variablesNames.splice(index, 1)
     }
 
-    return true
+    for (let i = 0; i < forgotten.length; i++)
+        variablesNames.push(forgotten[i])
+
+    for (let i = variablesNames.length - 1; i > 0; i--)
+        if (variablesNames.indexOf(variablesNames[i]) < i)
+            variablesNames.splice(i, 1)
+
+    return variablesNames
 }
 
 FunctionTable.prototype.GetSimplifiedExpression = function() {
