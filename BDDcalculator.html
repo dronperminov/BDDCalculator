@@ -4,6 +4,7 @@
     <title></title>
 
     <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width; initial-scale=1.0; user-scalable=no">
 
     <style>
         h1 { margin-bottom: 5px }
@@ -21,6 +22,12 @@
         .bdd-calculator-controls { display: table-cell; vertical-align: top; width: 50% }
         .bdd-calculator-view { display: table-cell; vertical-align: top; width: 50%; padding: 10px }
         .bdd-calculator-view canvas { border: 1px solid #000; }
+
+        @media (max-width: 767px) {
+            .bdd-calculator { display: block; }
+            .bdd-calculator-controls { display: block; width: 100%; }
+            .bdd-calculator-view { display: block; width: 100%; padding: 0 }
+        }
     </style>
 </head>
 <body>
@@ -79,26 +86,20 @@
     <script>
         function AppendChar(c) {
             let inputBox = document.getElementById("inputBox")
+            inputBox.focus()
 
-            if (document.selection) {
-                inputBox.focus()
-                sel = document.selection.createRange()
-                sel.text = c
-            }
-            else if (inputBox.selectionStart || inputBox.selectionStart == '0') {
-                let startPos = +inputBox.selectionStart
-                let endPos = inputBox.selectionEnd
-                inputBox.value = inputBox.value.substring(0, startPos) + c + inputBox.value.substring(endPos, inputBox.value.length)
-            } else {
-                inputBox.value += c;
-            }
+            let start = +inputBox.selectionStart
+            let end = inputBox.selectionEnd
+            inputBox.value = inputBox.value.substring(0, start) + c + inputBox.value.substring(end, inputBox.value.length)
+            inputBox.selectionStart = start + c.length
+            inputBox.selectionEnd = start + c.length
         }
 
         let inputBox = document.getElementById("inputBox")
         let variablesBox = document.getElementById("variablesBox")
         let resultBox = document.getElementById("resultBox")
         let canvas = document.getElementById("canvas")
-        let size = 800
+        let size = Math.min(800, document.getElementById("calculator-view").clientWidth)
         let calculator = new BDDCalculator(inputBox, variablesBox, resultBox, canvas, size, size)
         calculator.Solve()
     </script>
