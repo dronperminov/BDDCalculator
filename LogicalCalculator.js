@@ -13,32 +13,12 @@ const ZERO = "0"
 function LogicalCalculator(expression) {
     this.expression = expression // удаляем из выражения пробельные символы
 
-    this.InitFunctions() // инциализируем функции
-    this.InitBinaryFunctions() // инициализируем бинарные функции
     this.InitOperators() // инциализируем операции
     this.InitConstants() // инициализируем константы
     this.InitReplacements()
     this.InitRegExp() // инициализируем регулярное выражение
     this.SplitToLexemes() // разбиваем на лексемы
     this.ConvertToRPN() // получаем польскую запись
-}
-
-// инициализация функций
-LogicalCalculator.prototype.InitFunctions = function() {
-    this.functions = {}
-
-    this.functions["not"] = function(x) { return 1 - x }
-}
-
-// инициализация бинарных функций
-LogicalCalculator.prototype.InitBinaryFunctions = function() {
-    this.binaryFunctions = {}
-
-    this.binaryFunctions["and"] = function(x, y) { return x && y }
-    this.binaryFunctions["xor"] = function(x, y) { return x == y ? 0 : 1 }
-    this.binaryFunctions["or"] = function(x, y) { return x || y }
-    this.binaryFunctions["eq"] = function(x, y) { return x == y ? 1 : 0 }
-    this.binaryFunctions["impl"] = function(x, y) { return (1 - x) || y }
 }
 
 // инициализация операций
@@ -85,12 +65,10 @@ LogicalCalculator.prototype.InitReplacements = function() {
 LogicalCalculator.prototype.InitRegExp = function() {
     let number = "1|0" // вещественные числа
     let operators = Object.keys(this.operators).map(function(x) { return x.length == 1 ? "\\" + x : x }).join("|") // операции
-    let functions = Object.keys(this.functions).join("|") // функции
-    let binaryFunctions = Object.keys(this.binaryFunctions).join("|") // бинарные функции
     let constants = Object.keys(this.constants).join("|") // константы
     let variables = "[a-z][a-z\\d]*" // переменные
 
-    let parts = [ number, "\\(|\\)|\\¬", operators, functions, binaryFunctions, constants, variables, ","]
+    let parts = [ number, "\\(|\\)|\\¬", operators, constants, variables, ","]
 
     this.regexp = new RegExp(parts.join("|"), "gi")
 }
@@ -109,16 +87,6 @@ LogicalCalculator.prototype.SplitToLexemes = function() {
 
     if (this.lexemes.join("") != this.expression.replace(/\s/g, "")) // если выражения не совпадают
         throw "Unknown characters in expression"; // значит есть некорректные символы
-}
-
-// проверка на функцию
-LogicalCalculator.prototype.IsFunction = function(lexeme) {
-    return lexeme in this.functions
-}
-
-// проверка на бинарную функцию
-LogicalCalculator.prototype.IsBinaryFunction = function(lexeme) {
-    return lexeme in this.binaryFunctions
 }
 
 // проверка на операцию
@@ -143,9 +111,6 @@ LogicalCalculator.prototype.IsVariable = function(lexeme) {
 
 // получение приоритета операции
 LogicalCalculator.prototype.GetPriority = function(lexeme) {
-    if (this.IsFunction(lexeme) || this.IsBinaryFunction(lexeme))
-        return 8
-
     if (lexeme == NOT)
         return 7
 
@@ -188,9 +153,6 @@ LogicalCalculator.prototype.ConvertToRPN = function() {
         if (this.IsNumber(lexeme) || this.IsConstant(lexeme)) {
             this.rpn.push(lexeme)
         }
-        else if (this.IsFunction(lexeme) || this.IsBinaryFunction(lexeme)) {
-            stack.push(lexeme)
-        }
         else if (this.IsOperator(lexeme) || lexeme == NOT) {
             while (stack.length > 0 && this.IsMorePriority(lexeme, stack[stack.length - 1]))
                 this.rpn.push(stack.pop())
@@ -219,9 +181,6 @@ LogicalCalculator.prototype.ConvertToRPN = function() {
                 throw "Incorrect expression: brackets are disbalanced"
 
             stack.pop()
-
-            if (stack.length > 0 && this.IsFunction(stack[stack.length - 1]))
-                this.rpn.push(stack.pop())
         }
         else
             throw "Incorrect expression: unknown lexeme '" + lexeme + "'"
@@ -254,22 +213,6 @@ LogicalCalculator.prototype.Evaluate = function() {
 
             stack.push(this.operators[lexeme](arg1, arg2))
         }
-        else if (this.IsFunction(lexeme)) {
-            if (stack.length < 1)
-                throw "Unable to evaluate function '" + lexeme + "'"
-
-            let arg = stack.pop()
-            stack.push(this.functions[lexeme](arg))
-        }
-        else if (this.IsBinaryFunction(lexeme)) {
-            if (stack.length < 2)
-                throw "Unable to evaluate function '" + lexeme + "'"
-
-            let arg2 = stack.pop()
-            let arg1 = stack.pop()
-
-            stack.push(this.binaryFunctions[lexeme](arg1, arg2))
-        }
         else if (lexeme == NOT) {
             if (stack.length < 1)
                 throw "Unable to evaluate unary minus"
@@ -298,35 +241,47 @@ LogicalCalculator.prototype.Evaluate = function() {
 // перевод выражения в польской записи в строку
 LogicalCalculator.prototype.ToStringRPN = function(rpn) {
     let stack = []
+    let priorities = []
 
     for (let lexeme of rpn.values()) {
         if (this.IsOperator(lexeme)) {
             let arg2 = stack.pop()
             let arg1 = stack.pop()
 
-            stack.push(`(${arg1} ${lexeme} ${arg2})`)
-        }
-        else if (this.IsFunction(lexeme)) {
-            let arg = stack.pop()
-            stack.push(`${lexeme}(${arg})`)
-        }
-        else if (this.IsBinaryFunction(lexeme)) {
-            let arg2 = stack.pop()
-            let arg1 = stack.pop()
+            let priority2 = priorities.pop()
+            let priority1 = priorities.pop()
+            let priority = this.GetPriority(lexeme)
 
-            stack.push(`${lexeme}(${arg1}, ${arg2})`)
+            if (priority > priority1 && priority1 > 0)
+                arg1 = `(${arg1})`
+
+            if (priority > priority2 && priority2 > 0)
+                arg2 = `(${arg2})`
+
+            stack.push(`${arg1} ${lexeme} ${arg2}`)
+            priorities.push(this.GetPriority(lexeme))
         }
         else if (lexeme == NOT) {
-            stack.push(`¬${stack.pop()}`)
+            let arg = stack.pop()
+            let priority = priorities.pop()
+
+            if (priority > 0)
+                arg = `(${arg})`
+
+            stack.push(`¬${arg}`)
+            priorities.push(priority)
         }
         else if (this.IsConstant(lexeme)) {
             stack.push(`${this.constants[lexeme]}`)
+            priorities.push(this.GetPriority(lexeme))
         }
         else if (this.IsVariable(lexeme)) {
             stack.push(`${lexeme}`)
+            priorities.push(this.GetPriority(lexeme))
         }
         else if (this.IsNumber(lexeme)) {
             stack.push(`${lexeme}`)
+            priorities.push(this.GetPriority(lexeme))
         }
         else
             throw "Unknown rpn lexeme '" + lexeme + "'"
@@ -369,15 +324,6 @@ LogicalCalculator.prototype.EvaluateTree = function(node, variables) {
 
     if (this.IsVariable(node.value))
         return variables[node.value]
-
-    if (this.IsFunction(node.value))
-        this.functions[node.value](this.EvaluateTree(node.arg1, variables))
-
-    if (this.IsBinaryFunction(node.value)) {
-        let arg1 = this.EvaluateTree(node.arg1, variables)
-        let arg2 = this.EvaluateTree(node.arg2, variables)
-        this.binaryFunctions[node.value](node.arg1, node.arg2)
-    }
 
     if (this.IsOperator(node.value)) {
         let arg1 = this.EvaluateTree(node.arg1, variables)
@@ -692,17 +638,11 @@ LogicalCalculator.prototype.MakeTree = function(rpn, needSimplify = true) {
     let stack = []
 
     for (let lexeme of rpn.values()) {
-        if (this.IsOperator(lexeme) || this.IsBinaryFunction(lexeme)) {
+        if (this.IsOperator(lexeme)) {
             let arg2 = stack.pop()
             let arg1 = stack.pop()
 
             stack.push({value: lexeme, arg1: arg1, arg2: arg2})
-        }
-        else if (this.IsFunction(lexeme)) {
-            if (stack.length < 1)
-                throw "Unable to evaluate function '" + lexeme + "'"
-
-            stack.push({value: lexeme, arg1: stack.pop(), arg2: null})
         }
         else if (lexeme == NOT) {
             if (stack.length < 1)
