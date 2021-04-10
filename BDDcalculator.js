@@ -21,19 +21,77 @@ function BDDCalculator(inputBox, variablesBox, resultBox, canvas, width, height)
     this.activeNode = null
 }
 
+// проверка на степень двойки
+BDDCalculator.prototype.IsPowerOfTwo = function(n) {
+    return (n & (n - 1)) == 0
+}
+
+// проверка, что введён вектор
+BDDCalculator.prototype.IsVector = function(expression) {
+    return expression.match(/^[01]+$/g) != null && this.IsPowerOfTwo(expression.length)
+}
+
+BDDCalculator.prototype.GetExpression = function() {
+    let expression = this.inputBox.value
+
+    if (!this.IsVector(expression))
+        return expression
+
+    if (expression.match(/^0+$/g) != null)
+        return "0"
+
+    let n = Math.log2(expression.length)
+    let names = []
+
+    for (let i = 0; i < n; i++)
+        names.push("x" + (i + 1))
+
+    let sdnf = []
+    let sknf = []
+
+    for (let i = 0; i < expression.length; i++) {
+        let sdnfNames = []
+        let sknfNames = []
+
+        for (let j = 0; j < n; j++) {
+            let bit = (i >> (n - 1 - j)) & 1
+            sdnfNames.push(bit ? names[j] : NOT + names[j])
+            sknfNames.push(bit ? NOT + names[j] : names[j])
+        }
+
+        if (expression[i] == '1')
+            sdnf.push(sdnfNames.join(AND))
+        else
+            sknf.push("(" + sknfNames.join(OR) + ")")
+    }
+
+    this.variablesBox.value = names.join(" ")
+
+    return (sdnf.length < sknf.length ? sdnf.join(OR) : sknf.join(AND))
+}
+
 // построение BDD по выражению
 BDDCalculator.prototype.Solve = function() {
     console.clear()
     try {
         this.ctx.clearRect(0, 0, this.width, this.height)
-        this.funcTable = new FunctionTable(this.inputBox.value)
+        let expression = this.GetExpression()
+        console.log(expression)
+        this.funcTable = new FunctionTable(expression)
         this.variablesNames = this.variablesBox.value.split(/ +/g)
 
         if (!this.funcTable.HaveAllVariables(this.variablesNames))
             throw "Variable names not match with variables in expression"
 
+        let parsedExpression = this.funcTable.calculator.ToString()
+        let simplifiedExpression = this.funcTable.GetSimplifiedExpression()
+
         this.resultBox.innerHTML = "<p><b>Введённое выражение:</b> " + this.funcTable.calculator.expression + "</p>"
-        this.resultBox.innerHTML += "<p><b>Распаршенное выражение:</b> " + this.funcTable.calculator.ToString() + "</p>"
+        this.resultBox.innerHTML += "<p><b>Распаршенное выражение:</b> " + parsedExpression + "</p>"
+
+        if (simplifiedExpression != parsedExpression)
+            this.resultBox.innerHTML += "<p><b>Упрощённое выражение:</b> " + simplifiedExpression + "</p>"
+
         this.resultBox.innerHTML += "<p><b>Вектор функции:</b> " + this.funcTable.vector.join("") + "</p>"
         this.resultBox.innerHTML += "<p><b>Таблица истинности:</b></p>"
         this.resultBox.appendChild(this.funcTable.ToHTML())

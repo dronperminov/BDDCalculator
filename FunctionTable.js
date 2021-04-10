@@ -29,6 +29,12 @@ FunctionTable.prototype.HaveAllVariables = function(variablesNames) {
     return true
 }
 
+FunctionTable.prototype.GetSimplifiedExpression = function() {
+    let tree = this.calculator.MakeTree(this.calculator.rpn)
+    let rpn = this.calculator.TreeToRpn(tree)
+    return this.calculator.ToStringRPN(rpn)
+}
+
 // добавление в строку tr ячейки с текстом text
 FunctionTable.prototype.AddCell = function(tr, text, name="td") {
     let cell = document.createElement(name)
