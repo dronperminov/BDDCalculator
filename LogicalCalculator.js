@@ -290,6 +290,11 @@ LogicalCalculator.prototype.ToStringRPN = function(rpn) {
     return stack[0]
 }
 
+// перевод выражения в виде дерева в строку
+LogicalCalculator.prototype.ToStringTree = function(tree) {
+    return this.ToStringRPN(this.TreeToRpn(tree))
+}
+
 // перевод выражения в строку
 LogicalCalculator.prototype.ToString = function() {
     return this.ToStringRPN(this.rpn)
@@ -380,7 +385,7 @@ LogicalCalculator.prototype.IsTreesEqual = function(node1, node2) {
         return true
 
     if (node1 == null || node2 == null)
-        return this.IsTreesEqualNumerical(node1, node2)
+        return false
 
     if (node1.value != node2.value)
         return this.IsTreesEqualNumerical(node1, node2)
@@ -400,6 +405,21 @@ LogicalCalculator.prototype.SimplifyTreeNot = function(node) {
 
     if (node.arg1.value == ZERO )
         return this.MakeNode(ONE)
+
+    if (node.arg1.value == NOT)
+        return node.arg1.arg1
+
+    if (node.arg1.value == XOR)
+        return this.MakeNode(EQUAL, node.arg1.arg1, node.arg1.arg2)
+
+    if (node.arg1.value == EQUAL)
+        return this.MakeNode(XOR, node.arg1.arg1, node.arg1.arg2)
+
+    if (node.arg1.value == PIRS)
+        return this.MakeNode(OR, node.arg1.arg1, node.arg1.arg2)
+
+    if (node.arg1.value == SHEFFER)
+        return this.MakeNode(AND, node.arg1.arg1, node.arg1.arg2)
 
     return node
 }
@@ -450,10 +470,10 @@ LogicalCalculator.prototype.SimplifyTreeXor = function(node) {
         return this.MakeNode(ZERO)
 
     if (node.arg1.value == ONE)
-        return this.MakeNode(NOT, node.arg2)
+        return this.SimplifyTreeNot(this.MakeNode(NOT, node.arg2))
 
     if (node.arg2.value == ONE)
-        return this.MakeNode(NOT, node.arg1)
+        return this.SimplifyTreeNot(this.MakeNode(NOT, node.arg1))
 
     if (this.IsTreesEqual(node.arg1, node.arg2))
         return this.MakeNode(ZERO)
@@ -470,13 +490,13 @@ LogicalCalculator.prototype.SimplifyTreeSheffer = function(node) {
         return this.MakeNode(ZERO)
 
     if (node.arg1.value == ONE)
-        return this.MakeNode(NOT, node.arg2)
+        return this.SimplifyTreeNot(this.MakeNode(NOT, node.arg2))
 
     if (node.arg2.value == ONE)
-        return this.MakeNode(NOT, node.arg1)
+        return this.SimplifyTreeNot(this.MakeNode(NOT, node.arg1))
 
     if (this.IsTreesEqual(node.arg1, node.arg2))
-        return this.MakeNode(NOT, node.arg1)
+        return this.SimplifyTreeNot(this.MakeNode(NOT, node.arg1))
 
     return node
 }
@@ -490,13 +510,13 @@ LogicalCalculator.prototype.SimplifyTreePirs = function(node) {
         return this.MakeNode(ONE)
 
     if (node.arg1.value == ZERO)
-        return this.MakeNode(NOT, node.arg2)
+        return this.SimplifyTreeNot(this.MakeNode(NOT, node.arg2))
 
     if (node.arg2.value == ZERO)
-        return this.MakeNode(NOT, node.arg1)
+        return this.SimplifyTreeNot(this.MakeNode(NOT, node.arg1))
 
     if (this.IsTreesEqual(node.arg1, node.arg2))
-        return this.MakeNode(NOT, node.arg1)
+        return this.SimplifyTreeNot(this.MakeNode(NOT, node.arg1))
 
     return node
 }
@@ -510,7 +530,7 @@ LogicalCalculator.prototype.SimplifyTreeImpl = function(node) {
         return node.arg2
 
     if (node.arg2.value == ZERO)
-        return this.MakeNode(NOT, node.arg1)
+        return this.SimplifyTreeNot(this.MakeNode(NOT, node.arg1))
 
     if (this.IsTreesEqual(node.arg1, node.arg2))
         return this.MakeNode(ONE)
