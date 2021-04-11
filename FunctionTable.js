@@ -101,30 +101,6 @@ FunctionTable.prototype.ToHTML = function() {
     return table
 }
 
-// разбиение по переменной
-FunctionTable.prototype.SplitByVariable = function(name) {
-    let trueRpn = Array.from(this.calculator.rpn)
-    let falseRpn = Array.from(this.calculator.rpn)
-
-    for (let i = 0; i < this.calculator.rpn.length; i++) {
-        if (this.calculator.IsVariable(this.calculator.rpn[i]) && this.calculator.rpn[i] == name) {
-            trueRpn[i] = "1"
-            falseRpn[i] = "0"
-        }
-    }
-
-    let trueTree = this.calculator.MakeTree(trueRpn)
-    let falseTree = this.calculator.MakeTree(falseRpn)
-
-    trueRpn = this.calculator.TreeToRpn(trueTree)
-    falseRpn = this.calculator.TreeToRpn(falseTree)
-
-    let trueExpression = this.calculator.ToStringRPN(trueRpn)
-    let falseExpression = this.calculator.ToStringRPN(falseRpn)
-
-    return {trueExpression: trueExpression, falseExpression: falseExpression}
-}
-
 FunctionTable.prototype.GetKey = function() {
     if (this.expression == "0")
         return LEAF_ZERO
@@ -152,8 +128,7 @@ FunctionTable.prototype.BuildROBDD = function(variablesNames, applyes, solve, le
         i++
 
     let variable = variablesNames[i]
-
-    let splited = this.SplitByVariable(variable) // сплитим по первой доступной переменной
+    let splited = this.calculator.SplitByVariable(variable) // сплитим по первой доступной переменной
     let tableLow = new FunctionTable(splited.falseExpression)
     let tableHigh = new FunctionTable(splited.trueExpression)
 

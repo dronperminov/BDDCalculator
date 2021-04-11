@@ -99,7 +99,7 @@ BDDCalculator.prototype.Solve = function() {
 
         for (let i = 0; i < variables.length; i++) {
             this.resultBox.innerHTML += "<p><b>Разбиение по переменной " + variables[i] + ":</b><br>"
-            let splited = this.funcTable.SplitByVariable(variables[i])
+            let splited = this.funcTable.calculator.SplitByVariable(variables[i])
             this.resultBox.innerHTML += "TRUE: " + splited.trueExpression + "<br>"
             this.resultBox.innerHTML += "FALSE: " + splited.falseExpression
             this.resultBox.innerHTML += "</p>"

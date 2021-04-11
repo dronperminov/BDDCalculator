@@ -342,6 +342,27 @@ LogicalCalculator.prototype.EvaluateTree = function(node, variables) {
     throw node
 }
 
+// разбиение по переменной
+LogicalCalculator.prototype.SplitByVariable = function(name) {
+    let trueRpn = Array.from(this.rpn)
+    let falseRpn = Array.from(this.rpn)
+
+    for (let i = 0; i < this.rpn.length; i++) {
+        if (this.IsVariable(this.rpn[i]) && this.rpn[i] == name) {
+            trueRpn[i] = "1"
+            falseRpn[i] = "0"
+        }
+    }
+
+    let trueTree = this.MakeTree(trueRpn)
+    let falseTree = this.MakeTree(falseRpn)
+
+    let trueExpression = this.ToStringTree(trueTree)
+    let falseExpression = this.ToStringTree(falseTree)
+
+    return {trueExpression: trueExpression, falseExpression: falseExpression}
+}
+
 // проверка двух деревьев на эквивалентность путём проверки реализуемых функций
 LogicalCalculator.prototype.IsTreesEqualNumerical = function(node1, node2) {
     let variables1 = this.GetTreeVariables(node1)
