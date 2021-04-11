@@ -459,6 +459,12 @@ LogicalCalculator.prototype.SimplifyTreeAnd = function(node) {
     if (this.IsTreesEqual(node.arg1, node.arg2))
         return node.arg1
 
+    if (node.arg2.value == OR && (this.IsTreesEqual(node.arg1, node.arg2.arg1) || this.IsTreesEqual(node.arg1, node.arg2.arg2)))
+        return node.arg1
+
+    if (node.arg1.value == OR && (this.IsTreesEqual(node.arg2, node.arg1.arg1) || this.IsTreesEqual(node.arg2, node.arg1.arg2)))
+        return node.arg2
+
     return node
 }
 
@@ -475,6 +481,12 @@ LogicalCalculator.prototype.SimplifyTreeOr = function(node) {
 
     if (this.IsTreesEqual(node.arg1, node.arg2))
         return node.arg1
+
+    if (node.arg2.value == AND && (this.IsTreesEqual(node.arg1, node.arg2.arg1) || this.IsTreesEqual(node.arg1, node.arg2.arg2)))
+        return node.arg1
+
+    if (node.arg1.value == AND && (this.IsTreesEqual(node.arg2, node.arg1.arg1) || this.IsTreesEqual(node.arg2, node.arg1.arg2)))
+        return node.arg2
 
     return node
 }
