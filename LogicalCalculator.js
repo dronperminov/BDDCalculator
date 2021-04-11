@@ -369,7 +369,7 @@ LogicalCalculator.prototype.IsTreesEqualNumerical = function(node1, node2) {
     let variables2 = this.GetTreeVariables(node2)
     let variables = {}
 
-    if (variables1.length != variables2.length)
+    if (variables1.length != variables2.length && variables1.length > 0 && variables2.length > 0)
         return false
 
     for (let variable of variables1.values())
@@ -459,13 +459,16 @@ LogicalCalculator.prototype.SimplifyTreeAnd = function(node) {
     if (this.IsTreesEqual(node.arg1, node.arg2))
         return node.arg1
 
+    if (this.IsTreesEqual(node.arg1, this.MakeNode(NOT, node.arg2)))
+        return this.MakeNode(ZERO)
+
     if (node.arg2.value == OR && (this.IsTreesEqual(node.arg1, node.arg2.arg1) || this.IsTreesEqual(node.arg1, node.arg2.arg2)))
         return node.arg1
 
     if (node.arg1.value == OR && (this.IsTreesEqual(node.arg2, node.arg1.arg1) || this.IsTreesEqual(node.arg2, node.arg1.arg2)))
         return node.arg2
 
-    return node
+    return this.SimplifyByElementaryFunctions(node)
 }
 
 // упрощение дерева для дизъюнкции
@@ -482,13 +485,16 @@ LogicalCalculator.prototype.SimplifyTreeOr = function(node) {
     if (this.IsTreesEqual(node.arg1, node.arg2))
         return node.arg1
 
+    if (this.IsTreesEqual(node.arg1, this.MakeNode(NOT, node.arg2)))
+        return this.MakeNode(ONE)
+
     if (node.arg2.value == AND && (this.IsTreesEqual(node.arg1, node.arg2.arg1) || this.IsTreesEqual(node.arg1, node.arg2.arg2)))
         return node.arg1
 
     if (node.arg1.value == AND && (this.IsTreesEqual(node.arg2, node.arg1.arg1) || this.IsTreesEqual(node.arg2, node.arg1.arg2)))
         return node.arg2
 
-    return node
+    return this.SimplifyByElementaryFunctions(node)
 }
 
 // упрощение дерева для исключающего или
@@ -511,7 +517,10 @@ LogicalCalculator.prototype.SimplifyTreeXor = function(node) {
     if (this.IsTreesEqual(node.arg1, node.arg2))
         return this.MakeNode(ZERO)
 
-    return node
+    if (this.IsTreesEqual(node.arg1, this.MakeNode(NOT, node.arg2)))
+        return this.MakeNode(ONE)
+
+    return this.SimplifyByElementaryFunctions(node)
 }
 
 // упрощение дерева для штриха Шеффера
@@ -531,7 +540,7 @@ LogicalCalculator.prototype.SimplifyTreeSheffer = function(node) {
     if (this.IsTreesEqual(node.arg1, node.arg2))
         return this.SimplifyTreeNot(this.MakeNode(NOT, node.arg1))
 
-    return node
+    return this.SimplifyByElementaryFunctions(node)
 }
 
 // упрощение дерева для стрелки Пирса
@@ -551,7 +560,7 @@ LogicalCalculator.prototype.SimplifyTreePirs = function(node) {
     if (this.IsTreesEqual(node.arg1, node.arg2))
         return this.SimplifyTreeNot(this.MakeNode(NOT, node.arg1))
 
-    return node
+    return this.SimplifyByElementaryFunctions(node)
 }
 
 // упрощение дерева для импликации
@@ -568,7 +577,7 @@ LogicalCalculator.prototype.SimplifyTreeImpl = function(node) {
     if (this.IsTreesEqual(node.arg1, node.arg2))
         return this.MakeNode(ONE)
 
-    return node
+    return this.SimplifyByElementaryFunctions(node)
 }
 
 // упрощение дерева для эквивалентности
@@ -582,21 +591,21 @@ LogicalCalculator.prototype.SimplifyTreeEqual = function(node) {
     if (this.IsTreesEqual(node.arg1, node.arg2))
         return this.MakeNode(ONE)
 
-    return node
+    return this.SimplifyByElementaryFunctions(node)
 }
 
 // упрощение путём подбора пары элементарных функций 0, 1 и 2 переменных
 LogicalCalculator.prototype.SimplifyByElementaryFunctions = function(node) {
-    let variables = this.GetTreeVariables(node)
-
-    if (variables.length == 0)
-        return this.MakeNode(this.EvaluateTree(node, {}) + "")
-
     if (this.IsTreesEqual(node, this.MakeNode(ZERO)))
         return this.MakeNode(ZERO)
 
     if (this.IsTreesEqual(node, this.MakeNode(ONE)))
         return this.MakeNode(ONE)
+
+    let variables = this.GetTreeVariables(node)
+
+    if (variables.length == 0)
+        return this.MakeNode(this.EvaluateTree(node, {}) + "")
 
     // проверка на переменную или её отрицание
     for (let variable of variables) {
@@ -657,7 +666,6 @@ LogicalCalculator.prototype.SimplifyTree = function(node) {
     // упрощаем всё уровнями ниже
     node.arg1 = this.SimplifyTree(node.arg1)
     node.arg2 = this.SimplifyTree(node.arg2)
-    node = this.SimplifyByElementaryFunctions(node)
 
     if (node.value == NOT)
         return this.SimplifyTreeNot(node)
