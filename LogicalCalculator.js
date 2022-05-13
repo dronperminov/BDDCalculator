@@ -252,23 +252,14 @@ LogicalCalculator.prototype.ToStringRPN = function(rpn) {
             let priority1 = priorities.pop()
             let priority = this.GetPriority(lexeme)
 
-            if (priority > priority1 && priority1 > 0)
-                arg1 = `(${arg1})`
-
-            if (priority > priority2 && priority2 > 0)
-                arg2 = `(${arg2})`
-
-            stack.push(`${arg1} ${lexeme} ${arg2}`)
+            stack.push(`(${arg1}) ${lexeme} (${arg2})`)
             priorities.push(this.GetPriority(lexeme))
         }
         else if (lexeme == NOT) {
             let arg = stack.pop()
             let priority = priorities.pop()
 
-            if (priority > 0)
-                arg = `(${arg})`
-
-            stack.push(`¬${arg}`)
+            stack.push(`¬(${arg})`)
             priorities.push(priority)
         }
         else if (this.IsConstant(lexeme)) {
